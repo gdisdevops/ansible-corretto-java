@@ -1,0 +1,101 @@
+---
+
+- name: 'check host environment'
+  include: check_environment.yml
+
+# remove older installations
+#
+- block:
+
+  - name: detect package name rpm
+    shell: |
+      yum list installed --noplugins | grep java
+    register: java_package
+    when: ansible_os_family | lower == "redhat"
+  # TODO
+  #- name: detect package name deb
+  #  shell: |
+  #    dpkg -l | grep java
+  #  register: java_package
+  #  changed_when: java_package.rc != 0
+  #  failed_when: no
+  #  when: ansible_os_family | lower == "debian"
+
+  - name: set fact java_package
+    set_fact:
+      java_package_name="{{ java_package.stdout.split(' ')[0] }}"
+    when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
+
+  - name: remove installed java {{ java_package_name }}
+    package:
+      name: "{{ java_package_name }}"
+      state: absent
+    when: java_package_name is defined
+
+  - include_tasks: check_environment.yml
+
+  when: (
+    java_major_version is defined and (
+    java_installed == false or
+    java_major_version is version_compare(java_version, '!=') ) )
+
+# download and install
+#
+- block:
+
+  - name: download java {{ java_download_url | basename }}
+    get_url:
+      dest: "{{ java_download_folder }}"
+      url: "{{java_download_url}}"
+      checksum: "{{java_download_checksum}}"
+
+  - name: install java {{ java_download_url | basename }}
+    package:
+      name: "{{ java_download_folder }}/{{ java_download_url | basename }}"
+      state: present
+  when: ( java_installed == false or
+    java_major_version is version_compare(java_version, '<') )
+
+- name: detect JAVA_HOME
+  shell: |
+    dirname $(dirname $(readlink -f $(which javac)))
+  ignore_errors: yes
+  register: __java_home
+  tags:
+    - java
+    - skip_ansible_lint
+
+- name: setting fact for JAVA_HOME
+  set_fact:
+    java_home: '{{__java_home.stdout}}'
+  when: __java_home is defined
+
+- name: create some directories
+  file:
+    path: '{{item}}'
+    state: directory
+    mode: 0755
+  loop:
+    - /usr/lib/jvm
+    - /usr/java
+
+- name: update some java links
+  file:
+    src: '{{item.src}}'
+    dest: '{{item.dest}}'
+    state: link
+    force: yes
+  loop:
+    - { src: '{{java_home}}'  , dest: /usr/lib/jvm/java }
+    - { src: /usr/lib/jvm/java, dest: /usr/java/default }
+
+- name: 'insert custom profile script to define PATH variables'
+  template:
+    src: 'profile.d/java.sh.j2'
+    dest: '/etc/profile.d/java.sh'
+    owner: 'root'
+    group: 'root'
+    mode: '0755'
+  tags:
+    - java
+
