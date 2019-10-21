@@ -10,7 +10,7 @@ role_dir: "{{role_path}}"
 option_validate_checksum: false
 
 java_debian_install_method: installer # source
-java_download_folder: /usr/src/ansible/
+java_download_folder: /tmp
 
 java_folder: /usr/lib/jvm
 java_alias: "java-{{ java_version }}-corretto"
