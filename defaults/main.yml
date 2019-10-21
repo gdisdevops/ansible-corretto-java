@@ -27,9 +27,9 @@ java_map:
 #    11: { url: https://d3pxv6yz143wms.cloudfront.net/11.0.4.11.1/java-11-amazon-corretto-jdk_11.0.4.11-1_amd64.deb,
 #          checksum: "md5:180d8020d3d61aa050cfad1cf54193c9" }
   RedHat:
-    8:  { url: https://d3pxv6yz143wms.cloudfront.net/8.222.10.1/java-1.8.0-amazon-corretto-devel-1.8.0_222.b10-1.x86_64.rpm,
+    8:  { url: "https://d3pxv6yz143wms.cloudfront.net/8.222.10.1/java-1.8.0-amazon-corretto-devel-1.8.0_222.b10-1.x86_64.rpm",
           checksum: "sha256:8e73a43e091b2cc3fcb2c4cad83e20f6c0f262ac719fcb9595caec4795afb584" }
-    11: { url: https://d3pxv6yz143wms.cloudfront.net/11.0.4.11.1/java-11-amazon-corretto-devel-11.0.4.11-1.x86_64.rpm,
+    11: { url: "https://d3pxv6yz143wms.cloudfront.net/11.0.4.11.1/java-11-amazon-corretto-devel-11.0.4.11-1.x86_64.rpm",
           checksum: "sha256:c6a31650bb2cf5f7248d74f19e258db645cc7433c27b0ae3287170144f232e0d" }
 #  src:
 #    8:  { url: https://d3pxv6yz143wms.cloudfront.net/8.222.10.1/amazon-corretto-8.222.10.1-linux-x64.tar.gz, checksum: "md5:" }
