@@ -43,11 +43,26 @@
 #
 - block:
 
-  - name: download java {{ java_download_url | basename }}
+  - name: download java {{ java_download_url | basename }} to local folder
     get_url:
       dest: "{{ java_download_folder }}"
       url: "{{java_download_url}}"
       checksum: "{{java_download_checksum}}"
+    register: _download_archive
+    until: _download_archive is succeeded
+    retries: 5
+    delay: 2
+    # run_once: true # <-- this cannot be set due to multi-arch support
+    delegate_to: localhost
+    check_mode: false
+
+  - name: propagate java archive
+    copy:
+      src: "{{ java_download_folder }}/{{ java_download_url | basename }}"
+      dest: "{{ java_download_folder }}/{{ java_download_url | basename }}"
+      mode: 0755
+      owner: root
+      group: root
 
   - name: install java {{ java_download_url | basename }}
     package:
