@@ -44,6 +44,7 @@
 - block:
 
   - name: download java {{ java_download_url | basename }} to local folder
+    become: no
     get_url:
       dest: "{{ java_download_folder }}"
       url: "{{java_download_url}}"
