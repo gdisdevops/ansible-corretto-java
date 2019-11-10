@@ -2,7 +2,7 @@
 
 ansible role for amazons coretto java.
 
-## Supported Operating Systems
+## teste operating systems
 
 - CentOS 7
 

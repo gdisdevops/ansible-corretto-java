@@ -1,5 +1,19 @@
 ---
 
+- name: create deployment temporary directory
+  file:
+    path: "{{ deployment_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: create local temporary directory
+  become: false
+  file:
+    path: "{{ local_tmp_directory }}"
+    state: directory
+    mode: 0750
+  delegate_to: localhost
+
 - name: 'check host environment'
   include: check_environment.yml
 
@@ -7,75 +21,78 @@
 #
 - block:
 
-  - name: detect package name rpm
-    shell: |
-      yum list installed --noplugins | grep java
-    register: java_package
-    when: ansible_os_family | lower == "redhat"
-  # TODO
-  #- name: detect package name deb
-  #  shell: |
-  #    dpkg -l | grep java
-  #  register: java_package
-  #  changed_when: java_package.rc != 0
-  #  failed_when: no
-  #  when: ansible_os_family | lower == "debian"
+    - name: detect package name yum  # noqa 303
+      shell: |
+        yum list installed --noplugins | grep java
+      register: java_package
+      when: ansible_os_family | lower == "redhat"
+      tags:
+        - skip_ansible_lint
+    # TODO
+    # - name: detect package name deb
+    #   shell: |
+    #     dpkg -l | grep java
+    #   register: java_package
+    #   changed_when: java_package.rc != 0
+    #   failed_when: no
+    #   when: ansible_os_family | lower == "debian"
 
-  - name: set fact java_package
-    set_fact:
-      java_package_name="{{ java_package.stdout.split(' ')[0] }}"
-    when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
+    - name: set fact java_package
+      set_fact:
+        java_package_name="{{ java_package.stdout.split(' ')[0] }}"
+      when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
 
-  - name: remove installed java {{ java_package_name }}
-    package:
-      name: "{{ java_package_name }}"
-      state: absent
-    when: java_package_name is defined
+    - name: remove installed java {{ java_package_name }}
+      package:
+        name: "{{ java_package_name }}"
+        state: absent
+      when: java_package_name is defined
 
-  - include_tasks: check_environment.yml
+    - include_tasks: check_environment.yml
 
   when: (
     java_major_version is defined and (
-    java_installed == false or
+    not java_installed or
     java_major_version is version_compare(java_version, '!=') ) )
 
 # download and install
 #
 - block:
 
-  - name: download java {{ java_download_url | basename }} to local folder
-    become: no
-    get_url:
-      dest: "{{ java_download_folder }}"
-      url: "{{java_download_url}}"
-      checksum: "{{java_download_checksum}}"
-    register: _download_archive
-    until: _download_archive is succeeded
-    retries: 5
-    delay: 2
-    # run_once: true # <-- this cannot be set due to multi-arch support
-    delegate_to: localhost
-    check_mode: false
+    - name: "download java {{ java_download_url | basename }} to local folder"
+      become: false
+      get_url:
+        url: "{{ java_download_url }}"
+        dest: "{{ local_tmp_directory }}/{{ java_download_url | basename }}"
+        checksum: "{{ java_download_checksum }}"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      # run_once: true # <-- this cannot be set due to multi-arch support
+      delegate_to: localhost
+      check_mode: false
 
-  - name: propagate java archive
-    copy:
-      src: "{{ java_download_folder }}/{{ java_download_url | basename }}"
-      dest: "{{ java_download_folder }}/{{ java_download_url | basename }}"
-      mode: 0755
-      owner: root
-      group: root
+    - name: propagate java archive
+      copy:
+        src: "{{ local_tmp_directory }}/{{ java_download_url | basename }}"
+        dest: "{{ deployment_tmp_directory }}/{{ java_download_url | basename }}"
+        mode: 0755
+        owner: root
+        group: root
 
-  - name: install java {{ java_download_url | basename }}
-    package:
-      name: "{{ java_download_folder }}/{{ java_download_url | basename }}"
-      state: present
-  when: ( java_installed == false or
+    - name: install java {{ java_download_url | basename }}
+      package:
+        name: "{{ deployment_tmp_directory }}/{{ java_download_url | basename }}"
+        state: present
+      register: __java_install
+  when: ( not java_installed or
     java_major_version is version_compare(java_version, '<') )
 
 - name: detect JAVA_HOME
   shell: |
-    dirname $(dirname $(readlink -f $(which javac)))
-  ignore_errors: yes
+    dirname $(dirname $(readlink -f $(command -v javac)))
+  ignore_errors: true
   register: __java_home
   tags:
     - java
@@ -83,12 +100,12 @@
 
 - name: setting fact for JAVA_HOME
   set_fact:
-    java_home: '{{__java_home.stdout}}'
+    java_home: "{{ __java_home.stdout }}"
   when: __java_home is defined
 
 - name: create some directories
   file:
-    path: '{{item}}'
+    path: "{{ item }}"
     state: directory
     mode: 0755
   loop:
@@ -97,12 +114,12 @@
 
 - name: update some java links
   file:
-    src: '{{item.src}}'
-    dest: '{{item.dest}}'
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     state: link
-    force: yes
+    force: true
   loop:
-    - { src: '{{java_home}}'  , dest: /usr/lib/jvm/java }
+    - { src: "{{ java_home }}", dest: /usr/lib/jvm/java }
     - { src: /usr/lib/jvm/java, dest: /usr/java/default }
 
 - name: 'insert custom profile script to define PATH variables'
@@ -114,4 +131,3 @@
     mode: '0755'
   tags:
     - java
-

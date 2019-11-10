@@ -4,10 +4,10 @@
 # java_installed.rc == 1 : not installed
 - name: determine if java is already installed
   shell: |
-    which java
+    command -v java
   register: java_task_installed
   changed_when: java_task_installed.rc != 0
-  failed_when: no
+  failed_when: false
 
 # java_task_version.stderr = "java version \"1.8.0_191\"\nJava(TM) SE Runtime Environment  ... "
 # java_task_version.stderr = "java version \"1.7.0_201\"\nOpenJDK Runtime Environment  ... "
@@ -18,8 +18,8 @@
   when:
     java_task_installed.rc == 0
   register: java_task_version
-  changed_when: False
-  ignore_errors: yes
+  changed_when: false
+  ignore_errors: false
 
 - name: set fact java_version_installed
   set_fact:
@@ -32,26 +32,26 @@
 
 - name: set fact java_major_version for version < 11
   set_fact:
-    java_major_version: "{{java_version_installed[2:3]}}"
+    java_major_version: "{{ java_version_installed[2:3] }}"
   when: (
     java_version_installed is defined and
-    java_version_installed != '')
+    not java_version_installed )
 
 - name: set fact java_major_version for version >= 11
   set_fact:
-    java_major_version: "{{java_version_installed[0:2]}}"
+    java_major_version: "{{ java_version_installed[0:2] }}"
   when: (
     java_major_version is defined and
     java_major_version == '.' )
 
-- name: set fact java_installed to false if version {{java_version}} is not installed
+- name: set fact java_installed to false if version {{ java_version }} is not installed
   set_fact:
     java_installed: false
   when: (
     (java_major_version is defined and
      java_version != java_major_version | int))
 
-- name: set fact java_installed to true if version {{java_version}} is installed
+- name: set fact java_installed to true if version {{ java_version }} is installed
   set_fact:
     java_installed: true
   when: (
@@ -70,10 +70,10 @@
 
 - name: setting download url
   set_fact:
-    java_download_url: '{{java_map[ansible_os_family][java_version].url}}'
+    java_download_url: '{{ java_map[ansible_os_family][java_version].url }}'
   when: java_download_url is not defined
 
 - name: setting download checksum
   set_fact:
-    java_download_checksum: '{{java_map[ansible_os_family][java_version].checksum}}'
+    java_download_checksum: '{{ java_map[ansible_os_family][java_version].checksum }}'
   when: java_download_checksum is not defined
