@@ -28,18 +28,18 @@
       when: ansible_os_family | lower == "redhat"
       tags:
         - skip_ansible_lint
-    # TODO
-    # - name: detect package name deb
-    #   shell: |
-    #     dpkg -l | grep java
-    #   register: java_package
-    #   changed_when: java_package.rc != 0
-    #   failed_when: no
-    #   when: ansible_os_family | lower == "debian"
+
+    - name: detect package name deb
+      shell: |
+        dpkg -l | grep java
+      register: java_package
+      changed_when: java_package.rc != 0
+      failed_when: false
+      when: ansible_os_family | lower == "debian"
 
     - name: set fact java_package
       set_fact:
-        java_package_name="{{ java_package.stdout.split(' ')[0] }}"
+        java_package_name: "{{ java_package.stdout.split(' ')[0] }}"
       when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
 
     - name: remove installed java {{ java_package_name }}
@@ -59,11 +59,11 @@
 #
 - block:
 
-    - name: "download java {{ java_download_url | basename }} to local folder"
+    - name: "download {{ java_archive_name }} to local folder"
       become: false
       get_url:
         url: "{{ java_download_url }}"
-        dest: "{{ local_tmp_directory }}/{{ java_download_url | basename }}"
+        dest: "{{ local_tmp_directory }}/{{ java_archive_name }}"
         checksum: "{{ java_download_checksum }}"
       register: _download_archive
       until: _download_archive is succeeded
@@ -75,17 +75,34 @@
 
     - name: propagate java archive
       copy:
-        src: "{{ local_tmp_directory }}/{{ java_download_url | basename }}"
-        dest: "{{ deployment_tmp_directory }}/{{ java_download_url | basename }}"
+        src: "{{ local_tmp_directory }}/{{ java_archive_name }}"
+        dest: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
         mode: 0755
         owner: root
         group: root
 
-    - name: install java {{ java_download_url | basename }}
+    - name: install java for redhat based systems
       package:
-        name: "{{ deployment_tmp_directory }}/{{ java_download_url | basename }}"
+        name: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
         state: present
+      when: ansible_os_family | lower == "redhat"
       register: __java_install
+
+    - block:
+
+        - name: install java-common for debian based systems
+          package:
+            name: java-common
+            state: present
+
+        - name: install java for debian based systems
+          apt:
+            deb: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
+            state: present
+          register: __java_install
+
+      when: ansible_os_family | lower == "debian"
+
   when: ( not java_installed or
     java_major_version is version_compare(java_version, '<') )
 

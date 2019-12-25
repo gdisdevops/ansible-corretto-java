@@ -3,5 +3,8 @@
   any_errors_fatal: false
   environment:
     NETRC: ''
+    http_proxy: "{{ lookup('env', 'http_proxy') }}"
+    https_proxy: "{{ lookup('env', 'https_proxy') }}"
+    no_proxy: "{{ lookup('env', 'no_proxy') }}"
   roles:
     - ansible-coretto-java

@@ -2,12 +2,13 @@
 
 ansible role for amazons coretto java.
 
-## teste operating systems
+## tested operating systems
 
-- CentOS 7
+- CentOS 7 / 8
+- Ubuntu 16 / 18
+- Debian 9 / 10
 
 ## Supported Coretto Versions
 
 - 8
 - 11
-

@@ -70,10 +70,15 @@
 
 - name: setting download url
   set_fact:
-    java_download_url: '{{ java_map[ansible_os_family][java_version].url }}'
+    java_download_url: '{{ java_map[ansible_os_family | lower][java_version].url }}'
   when: java_download_url is not defined
 
 - name: setting download checksum
   set_fact:
-    java_download_checksum: '{{ java_map[ansible_os_family][java_version].checksum }}'
+    java_download_checksum: '{{ java_map[ansible_os_family | lower][java_version].checksum }}'
   when: java_download_checksum is not defined
+
+- name: setting archive name
+  set_fact:
+    java_archive_name: '{{ java_download_url | basename }}'
+  when: java_archive_name is not defined
