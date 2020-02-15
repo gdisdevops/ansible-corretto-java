@@ -1,0 +1,12 @@
+---
+- hosts: all
+  any_errors_fatal: false
+  environment:
+    NETRC: ''
+    http_proxy: "{{ lookup('env', 'http_proxy') }}"
+    https_proxy: "{{ lookup('env', 'https_proxy') }}"
+    no_proxy: "{{ lookup('env', 'no_proxy') }}"
+  vars:
+    - java_version: 8
+  roles:
+    - ansible-coretto-java

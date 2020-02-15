@@ -14,7 +14,7 @@
     mode: 0750
   delegate_to: localhost
 
-- name: 'check host environment'
+- name: check host environment
   include: check_environment.yml
 
 # remove older installations
@@ -120,6 +120,9 @@
     java_home: "{{ __java_home.stdout }}"
   when: __java_home is defined
 
+- name: detect java version
+  include: version.yml
+
 - name: create some directories
   file:
     path: "{{ item }}"
@@ -139,7 +142,7 @@
     - { src: "{{ java_home }}", dest: /usr/lib/jvm/java }
     - { src: /usr/lib/jvm/java, dest: /usr/java/default }
 
-- name: 'insert custom profile script to define PATH variables'
+- name: insert custom profile script to define PATH variables
   template:
     src: 'profile.d/java.sh.j2'
     dest: '/etc/profile.d/java.sh'
@@ -148,3 +151,40 @@
     mode: '0755'
   tags:
     - java
+
+- name: get system timestamp  # noqa 305
+  shell: 'date +"%Y-%m-%d %H-%M-%S %Z"'
+  register: timestamp
+  no_log: true
+  tags:
+    - skip_ansible_lint
+
+- name: set facts
+  set_fact:
+    current_date: "{{ timestamp.stdout[0:10] }}"
+    current_time: "{{ timestamp.stdout[11:] }}"
+    current_timestamp: "{{ timestamp.stdout }}"
+  no_log: true
+
+- name: create ansible local facts directory
+  file:
+    dest: /etc/ansible/facts.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: do facts module to get latest information
+  setup:
+    gather_subset:
+      - '!all'
+      - '!any'
+      - facter
+
+- name: create custom fact file
+  template:
+    src: corretto.fact.j2
+    dest: "/etc/ansible/facts.d/java.fact"
+    owner: 'root'
+    group: 'root'
+    mode: '0750'

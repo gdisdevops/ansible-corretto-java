@@ -56,8 +56,8 @@ platforms:
 
 provisioner:
   name: ansible
-  ansible_args:
-    - --diff
+  # ansible_args:
+  #   - --diff
   #   - -vvv
   lint:
     name: ansible-lint
@@ -68,7 +68,7 @@ provisioner:
     destroy: destroy.yml
 
 scenario:
-  name: default
+  name: corretto-8
   test_sequence:
     - lint
     - destroy

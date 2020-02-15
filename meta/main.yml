@@ -4,7 +4,7 @@ dependencies: []
 
 galaxy_info:
   author: bodsch
-  description: role for Amazons Java implementation coretto
+  description: role for Amazons Java implementation corretto
   company: ""
   license: "Apache"
   min_ansible_version: 2.2

@@ -1,0 +1,49 @@
+---
+
+# java_installed.rc == 0 : installed
+# java_installed.rc == 1 : not installed
+- name: determine if java is already installed
+  shell: |
+    command -v java
+  register: java_task_installed
+  changed_when: java_task_installed.rc != 0
+  failed_when: false
+
+# java_task_version.stderr = "java version \"1.8.0_191\"\nJava(TM) SE Runtime Environment  ... "
+# java_task_version.stderr = "java version \"1.7.0_201\"\nOpenJDK Runtime Environment  ... "
+# java_task_version.stderr = "openjdk version \"11.0.4\" 2019-07-16 LTS .."
+- name: determine which java version is installed
+  shell: |
+    java -version
+  when:
+    java_task_installed.rc == 0
+  register: java_task_version
+  changed_when: false
+  ignore_errors: false
+
+- name: set fact java_version_installed
+  set_fact:
+    java_version_installed: "{{ java_task_version.stderr.split('\n')[0] | regex_replace('.*\"(.*)\"','\\1') }}"
+  when:
+    java_task_installed.rc == 0
+
+- block:
+
+    # "java_version_installed": "1.8.0_222"
+    # "java_version_installed": "11.0.4 2019-07-16 LTS"
+
+    - name: set fact java_major_version for version < 11
+      set_fact:
+        java_major_version: "{{ java_version_installed[2:3] }}"
+      when: (
+        java_version_installed is defined and
+        java_version_installed[0] != '.' )
+
+    - name: set fact java_major_version for version >= 11
+      set_fact:
+        java_major_version: "{{ java_version_installed[0:2] }}"
+      when: (
+        java_major_version is defined and
+        java_major_version == '.' )
+
+  when: java_version_installed is defined
