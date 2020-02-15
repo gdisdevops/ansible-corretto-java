@@ -20,8 +20,6 @@ def get_vars(host):
         "include_vars",
         vars_files)["ansible_facts"]["role_vars"])
 
-    print(ansible_vars)
-
     return ansible_vars
 
 
@@ -53,7 +51,8 @@ def test_symlinks(host, dirs):
 
 @pytest.mark.parametrize("files", [
     "/usr/lib/jvm/java/bin/java",
-    "/etc/profile.d/java.sh"
+    "/etc/profile.d/java.sh",
+    "/etc/ansible/facts.d/java.fact"
 ])
 def test_files(host, files):
     f = host.file(files)

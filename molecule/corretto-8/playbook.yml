@@ -9,4 +9,4 @@
   vars:
     - java_version: 8
   roles:
-    - ansible-coretto-java
+    - ansible-corretto-java

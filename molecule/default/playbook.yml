@@ -7,4 +7,4 @@
     https_proxy: "{{ lookup('env', 'https_proxy') }}"
     no_proxy: "{{ lookup('env', 'no_proxy') }}"
   roles:
-    - ansible-coretto-java
+    - ansible-corretto-java
