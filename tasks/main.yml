@@ -144,11 +144,11 @@
 
 - name: insert custom profile script to define PATH variables
   template:
-    src: 'profile.d/java.sh.j2'
-    dest: '/etc/profile.d/java.sh'
-    owner: 'root'
-    group: 'root'
-    mode: '0755'
+    src: profile.d/java.sh.j2
+    dest: /etc/profile.d/java.sh
+    owner: root
+    group: root
+    mode: 0755
   tags:
     - java
 
@@ -184,7 +184,7 @@
 - name: create custom fact file
   template:
     src: corretto.fact.j2
-    dest: "/etc/ansible/facts.d/java.fact"
-    owner: 'root'
-    group: 'root'
-    mode: '0750'
+    dest: /etc/ansible/facts.d/java.fact
+    owner: root
+    group: root
+    mode: 0755

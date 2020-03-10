@@ -1,5 +1,7 @@
 ---
 
+local_tmp_directory: /tmp/ansible_artefacts
+
 java_installed: false
 
 java_version: 11
