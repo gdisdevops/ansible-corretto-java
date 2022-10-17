@@ -1,23 +1,26 @@
 ---
 
-dependencies: []
-
 galaxy_info:
   author: bodsch
   description: role for Amazons Java implementation corretto
   company: ""
   license: "Apache"
-  min_ansible_version: 2.2
+  min_ansible_version: 2.8
   platforms:
     - name: Ubuntu
       versions:
-        - 16.04
-        - 18.04
+        # 18.04
+        - bionic
+        # 20.04
+        - focal
     - name: Debian
       versions:
-        - 9
-        - 10
-    - name: CentOs
+        # 9
+        - etch
+        # 10
+        - buster
+    - name: EL
       versions:
-        - 7
         - 8
+
+dependencies: []

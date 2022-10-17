@@ -2,8 +2,10 @@
 cat <<EOF
 {
   "java_home" : "{{ java_home }}",
-  "version" : "{{ java_version_installed }}",
-  "major_version" : "{{ java_major_version }}",
-  "date" : "{{ current_timestamp }}"
+  "date" : "{{ current_timestamp }}",
+  "version": {
+    "full": "{{ java_version_installed }}",
+    "major" : "{{ java_major_version }}"
+  }
 }
 EOF

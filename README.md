@@ -1,9 +1,14 @@
-# corretto java
 
 ansible role for Amazon's Java implementation corretto.
 
-- [corretto-8](https://docs.aws.amazon.com/corretto/latest/corretto-8-ug)
-- [corretto-11](https://docs.aws.amazon.com/corretto/latest/corretto-11-ug)
+
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bodsch/ansible-corretto-java/CI)][ci]
+[![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-corretto-java)][issues]
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-corretto-java)][releases]
+
+[ci]: https://github.com/bodsch/ansible-corretto-java/actions
+[issues]: https://github.com/bodsch/ansible-corretto-java/issues?q=is%3Aopen+is%3Aissue
+[releases]: https://github.com/bodsch/ansible-corretto-java/releases
 
 default java version is 11
 
@@ -13,10 +18,15 @@ default java version is 11
 - Ubuntu 16 / 18
 - Debian 9 / 10
 
-## Supported Corretto Versions
+## Supported Versions
 
-- 8
-- 11
+- [corretto-8](https://docs.aws.amazon.com/corretto/latest/corretto-8-ug)
+- [corretto-11](https://docs.aws.amazon.com/corretto/latest/corretto-11-ug)
+- [corretto-15](https://docs.aws.amazon.com/corretto/latest/corretto-15-ug)
+
+
+# downloads
+
 
 ## configuration parameters
 
@@ -25,11 +35,6 @@ java_version: 11
 
 java_folder: /usr/lib/jvm
 java_alias: "java-{{ java_version }}-corretto"
-
-# https://github.com/corretto/corretto-8/releases
-#  - https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/downloads-list.html#download
-# https://github.com/corretto/corretto-11/releases
-#  - https://docs.aws.amazon.com/corretto/latest/corretto-11-ug/downloads-list.html#download
 
 java_map:
   redhat:

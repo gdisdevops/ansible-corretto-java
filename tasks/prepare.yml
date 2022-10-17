@@ -1,0 +1,30 @@
+---
+
+- name: re-read setup
+  setup:
+
+- name: assert missing java version
+  assert:
+    that:
+      - java_version is defined
+      - java_version | int in [8,11,15]
+    msg: wrong java_version
+    quiet: true
+
+- name: create remote temporary directory
+  file:
+    path: "{{ remote_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: create local temporary directory
+  become: false
+  delegate_to: 127.0.0.1
+  file:
+    path: "{{ local_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: parse java major version
+  set_fact:
+    java_major_version: "{{ java_map[ansible_os_family | lower][java_version].url | basename | parse_java_version }}"
