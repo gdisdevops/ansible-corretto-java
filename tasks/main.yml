@@ -2,184 +2,184 @@
 
 - include_tasks: prepare.yml
 
-# - name: check host environment
-#   include: check_environment.yml
+- name: check host environment
+  include_tasks: check_environment.yml
+
+# remove older installations
 #
-# # remove older installations
-# #
-# - block:
-#     - name: detect package name yum  # noqa 303
-#       shell: |
-#         yum list installed --noplugins | grep java
-#       register: java_package
-#       when: ansible_os_family | lower == "redhat"
-#       tags:
-#         - skip_ansible_lint
+- block:
+    - name: detect package name yum  # noqa 303
+      shell: |
+        yum list installed --noplugins | grep java
+      register: java_package
+      when: ansible_os_family | lower == "redhat"
+      tags:
+        - skip_ansible_lint
+
+    - name: detect package name deb
+      shell: |
+        dpkg -l | grep java
+      register: java_package
+      changed_when: java_package.rc != 0
+      failed_when: false
+      when: ansible_os_family | lower == "debian"
+
+    - name: set fact java_package
+      set_fact:
+        java_package_name: "{{ java_package.stdout.split(' ')[0] }}"
+      when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
+
+    - name: remove installed java {{ java_package_name }}
+      package:
+        name: "{{ java_package_name }}"
+        state: absent
+      when: java_package_name is defined
+
+    - include_tasks: check_environment.yml
+
+  when: (
+    java_major_version is defined and (
+    not java_installed or
+    java_major_version is version_compare(java_version, '!=') ) )
+
+# download and install
 #
-#     - name: detect package name deb
-#       shell: |
-#         dpkg -l | grep java
-#       register: java_package
-#       changed_when: java_package.rc != 0
-#       failed_when: false
-#       when: ansible_os_family | lower == "debian"
-#
-#     - name: set fact java_package
-#       set_fact:
-#         java_package_name: "{{ java_package.stdout.split(' ')[0] }}"
-#       when: ( java_package is defined and java_package.stdout.split(' ')[0] is defined )
-#
-#     - name: remove installed java {{ java_package_name }}
-#       package:
-#         name: "{{ java_package_name }}"
-#         state: absent
-#       when: java_package_name is defined
-#
-#     - include_tasks: check_environment.yml
-#
-#   when: (
-#     java_major_version is defined and (
-#     not java_installed or
-#     java_major_version is version_compare(java_version, '!=') ) )
-#
-# # download and install
-# #
-# - block:
-#     - name: "download {{ java_archive_name }} to local folder"
-#       become: false
-#       get_url:
-#         url: "{{ java_download_url }}"
-#         dest: "{{ local_tmp_directory }}/{{ java_archive_name }}"
-#         checksum: "{{ java_download_checksum }}"
-#       register: _download_archive
-#       until: _download_archive is succeeded
-#       retries: 5
-#       delay: 2
-#       # run_once: true # <-- this cannot be set due to multi-arch support
-#       delegate_to: localhost
-#       check_mode: false
-#
-#     - name: propagate java archive
-#       copy:
-#         src: "{{ local_tmp_directory }}/{{ java_archive_name }}"
-#         dest: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
-#         mode: 0755
-#         owner: root
-#         group: root
-#
-#     - name: install java for redhat based systems
-#       package:
-#         name: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
-#         state: present
-#       when: ansible_os_family | lower == "redhat"
-#       register: __java_install
-#
-#     - block:
-#         - name: update apt cache
-#           apt:
-#             update_cache: true
-#
-#         - name: install java-common for debian based systems
-#           package:
-#             name: java-common
-#             state: present
-#
-#         - name: install java for debian based systems
-#           apt:
-#             deb: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
-#             state: present
-#           register: __java_install
-#
-#       when: ansible_os_family | lower == "debian"
-#
-#   when: ( not java_installed or
-#     java_major_version is version_compare(java_version, '<') )
-#
-# - name: detect JAVA_HOME
-#   shell: |
-#     dirname $(dirname $(readlink -f $(command -v javac)))
-#   ignore_errors: true
-#   register: __java_home
-#   tags:
-#     - java
-#     - skip_ansible_lint
-#
-# - debug:
-#     var: "{{ item }}"
-#   when: item is defined
-#   loop:
-#     - __java_home
-#
-# - name: setting fact for JAVA_HOME
-#   set_fact:
-#     java_home: "{{ __java_home.stdout }}"
-#   when: __java_home is defined
-#
-# - name: detect java version
-#   include: version.yml
-#
-# - name: create some directories
-#   file:
-#     path: "{{ item }}"
-#     state: directory
-#     mode: 0755
-#   loop:
-#     - /usr/lib/jvm
-#     - /usr/java
-#
-# - name: update some java links
-#   file:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     state: link
-#     force: true
-#   loop:
-#     - src: "{{ java_home }}"
-#       dest: /usr/lib/jvm/java
-#     - src: /usr/lib/jvm/java
-#       dest: /usr/java/default
-#
-# - name: insert custom profile script to define PATH variables
-#   template:
-#     src: profile.d/java.sh.j2
-#     dest: /etc/profile.d/java.sh
-#     owner: root
-#     group: root
-#     mode: 0755
-#   tags:
-#     - java
-#
-# - name: get system timestamp
-#   set_fact:
-#     timestamp: "{{ ansible_date_time.iso8601 }}"
-#
-# - name: set facts
-#   set_fact:
-#     current_date: "{{ timestamp[0:10] }}"
-#     current_time: "{{ timestamp[11:-1] }}"
-#     current_timestamp: "{{ timestamp }}"
-#   no_log: true
-#
-# - name: create ansible local facts directory
-#   file:
-#     dest: /etc/ansible/facts.d
-#     state: directory
-#     owner: root
-#     group: root
-#     mode: 0755
-#
-# - name: do facts module to get latest information
-#   setup:
-#     gather_subset:
-#       - '!all'
-#       - '!any'
-#       - facter
-#
-# - name: create custom fact file
-#   template:
-#     src: corretto.fact.j2
-#     dest: /etc/ansible/facts.d/java.fact
-#     owner: root
-#     group: root
-#     mode: 0755
-#
+- block:
+    - name: "download {{ java_archive_name }} to local folder"
+      become: false
+      get_url:
+        url: "{{ java_download_url }}"
+        dest: "{{ local_tmp_directory }}/{{ java_archive_name }}"
+        checksum: "{{ java_download_checksum }}"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      # run_once: true # <-- this cannot be set due to multi-arch support
+      delegate_to: localhost
+      check_mode: false
+
+    - name: propagate java archive
+      copy:
+        src: "{{ local_tmp_directory }}/{{ java_archive_name }}"
+        dest: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: install java for redhat based systems
+      package:
+        name: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
+        state: present
+      when: ansible_os_family | lower == "redhat"
+      register: __java_install
+
+    - block:
+        - name: update apt cache
+          apt:
+            update_cache: true
+
+        - name: install java-common for debian based systems
+          package:
+            name: java-common
+            state: present
+
+        - name: install java for debian based systems
+          apt:
+            deb: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
+            state: present
+          register: __java_install
+
+      when: ansible_os_family | lower == "debian"
+
+  when: ( not java_installed or
+    java_major_version is version_compare(java_version, '<') )
+
+- name: detect JAVA_HOME
+  shell: |
+    dirname $(dirname $(readlink -f $(command -v javac)))
+  ignore_errors: true
+  register: __java_home
+  tags:
+    - java
+    - skip_ansible_lint
+
+- debug:
+    var: "{{ item }}"
+  when: item is defined
+  loop:
+    - __java_home
+
+- name: setting fact for JAVA_HOME
+  set_fact:
+    java_home: "{{ __java_home.stdout }}"
+  when: __java_home is defined
+
+- name: detect java version
+  include_tasks: version.yml
+
+- name: create some directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /usr/lib/jvm
+    - /usr/java
+
+- name: update some java links
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+    force: true
+  loop:
+    - src: "{{ java_home }}"
+      dest: /usr/lib/jvm/java
+    - src: /usr/lib/jvm/java
+      dest: /usr/java/default
+
+- name: insert custom profile script to define PATH variables
+  template:
+    src: profile.d/java.sh.j2
+    dest: /etc/profile.d/java.sh
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - java
+
+- name: get system timestamp
+  set_fact:
+    timestamp: "{{ ansible_date_time.iso8601 }}"
+
+- name: set facts
+  set_fact:
+    current_date: "{{ timestamp[0:10] }}"
+    current_time: "{{ timestamp[11:-1] }}"
+    current_timestamp: "{{ timestamp }}"
+  no_log: true
+
+- name: create ansible local facts directory
+  file:
+    dest: /etc/ansible/facts.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: do facts module to get latest information
+  setup:
+    gather_subset:
+      - '!all'
+      - '!any'
+      - facter
+
+- name: create custom fact file
+  template:
+    src: corretto.fact.j2
+    dest: /etc/ansible/facts.d/java.fact
+    owner: root
+    group: root
+    mode: 0755
+
