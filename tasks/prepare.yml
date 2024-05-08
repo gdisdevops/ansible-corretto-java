@@ -24,7 +24,3 @@
     path: "{{ local_tmp_directory }}"
     state: directory
     mode: 0750
-
-- name: parse java major version
-  set_fact:
-    java_major_version: "{{ java_map[ansible_os_family | lower][java_version].url | basename | parse_java_version }}"
