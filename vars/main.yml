@@ -1,3 +1,4 @@
 ---
 
 remote_tmp_directory: /tmp/java/{{ java_version }}
+deployment_tmp_directory: /tmp/deployment_artefacts
