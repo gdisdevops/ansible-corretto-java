@@ -7,7 +7,7 @@
   assert:
     that:
       - java_version is defined
-      - java_version | int in [8,11,15]
+      - java_version | int in [8,11,15,17]
     msg: wrong java_version
     quiet: true
 
