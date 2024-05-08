@@ -62,14 +62,14 @@
     - name: propagate java archive
       copy:
         src: "{{ local_tmp_directory }}/{{ java_archive_name }}"
-        dest: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
+        dest: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
         mode: 0755
         owner: root
         group: root
 
     - name: install java for redhat based systems
       package:
-        name: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
+        name: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
         state: present
       when: ansible_os_family | lower == "redhat"
       register: __java_install
@@ -86,7 +86,7 @@
 
         - name: install java for debian based systems
           apt:
-            deb: "{{ deployment_tmp_directory }}/{{ java_archive_name }}"
+            deb: "{{ remote_tmp_directory }}/{{ java_archive_name }}"
             state: present
           register: __java_install
 
